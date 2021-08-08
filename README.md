@@ -3,12 +3,6 @@
 > Version 1.6.1 :memo:  
 > An easy tool to generate PHP files for class and manager.
 
-## How to use it ?
-
-- You can try the tool on [my website](https://nicolas-deleforge.fr/apps/classManagerGenerator/)  
-- You can download the [lastest release](https://github.com/n-deleforge/class-manager-generator/releases)  
-- Or you can clone the git : ```git clone https://github.com/n-deleforge/class-manager-generator.git```
-
 # Note for self-host
 
 If you download or clone the project to host it yourself, then you'll need [**Little JS**](https://github.com/n-deleforge/littleJS) at the line 60 of `index.html`.

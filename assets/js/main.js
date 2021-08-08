@@ -3,7 +3,7 @@
 
 const _listInput = get(".gen");
 const _message = get("#error");
-let tableName; let tableID; let columnsName; let className; 
+let tableName; let tableID; let columnsName; let className; let dbType; let dbConnect;
 
 // =================================================
 // ============ MAIN
@@ -43,10 +43,13 @@ get("#generate").addEventListener("click", () => {
         tableID = get("#tableId").value;
         className = ucFirst(get("#className").value);
         columnsName = get("#columnsName").value.split(',');
+        dbType = get("#dbType").value;
+        dbConnect = get("#dbConnect").value;
 
         // Generate data and make it downloadable
         download(generateClass(), className + ".Class.php");
         download(generateManager(), className + "Manager.Class.php");
+        if (dbConnect == "true") download(generateDbConnect(), "DbConnect.Class.php");
     }
     else _message.style.visibility = "visible";
 });
@@ -96,24 +99,10 @@ function generateGetterSetter() {
  **/
 
 function genererConstruct() {
-    return `public function __construct(array $options = [])
-{
-    if (!empty($options))
-    {
-        $this->hydrate($options);
-    }
-}
+    const construct = "public function __construct(array $options = [])\n{\nif (!empty($options))\n{\n$this->hydrate($options);\n}\n}";
+    const hydrate = "public function hydrate($data)\n{\nforeach ($data as $key => $value) {\n$method = \"set\" . ucfirst($key);\nif (is_callable(([$this, $method])))\n{\n$this->$method($value);\n}\n}\n}";
 
-public function hydrate($data)
-{
-    foreach ($data as $key => $value) {
-        $methode = "set" . ucfirst($key);
-        if (is_callable(([$this, $methode])))
-        {
-            $this->$methode($value);
-        }
-    }
-}`;
+    return construct + "\n" + hydrate;
 }
 
 // =================================================
@@ -124,7 +113,8 @@ public function hydrate($data)
  **/
 
 function generateManager() {
-    const key = columnsName.find(element => element == tableID);
+    // Remove the ID in the add function
+    const key = columnsName.find(el => el == tableID);
     if (key != "undefined") columnsName.splice(columnsName.indexOf(key), 1)
 
     return "<?php\nclass " + className + "Manager\n{\n" + generateAdd() + "\n\n" + generateUpdate() + "\n\n" + generateDelete() + "\n\n" + generateFindById() + "\n\n" + generateGetList() + "\n\n}";
@@ -175,7 +165,7 @@ function generateUpdate() {
  **/
 
 function generateDelete() {
-    return 'public static function delete(' + className + " $obj)\n{\n$db = DbConnect::getDb();\n" + '$db->exec("DELETE FROM ' + tableName + ' WHERE ' + tableID + '=" . $obj->get' + ucFirst(tableID) + '());\n}';
+    return 'public static function delete(' + className + " $obj)\n{\n$db = DbConnect::getDb();\n" + '$db->exec("DELETE FROM ' + tableName + ' WHERE ' + tableID + '=$obj->get' + ucFirst(tableID) + '()");\n}';
 }
 
 /**
@@ -183,7 +173,7 @@ function generateDelete() {
  **/
 
 function generateFindById() {
-    return "public static function findById($id)\n{\n$db = DbConnect::getDb();\n$id = (int) $id;\n" + '$q = $db->query("SELECT * FROM ' + tableName + ' WHERE ' + tableID + '=".$id);\n' + "$results = $q->fetch(PDO::FETCH_ASSOC);\nif ($results != false) {\nreturn new " + className + " ($results);\n }else {\nreturn false;\n}\n}";
+    return "public static function findById($id)\n{\n$db = DbConnect::getDb();\n$id = (int) $id;\n" + '$q = $db->query("SELECT * FROM ' + tableName + ' WHERE ' + tableID + '=$id");\n' + "$results = $q->fetch(PDO::FETCH_ASSOC);\nreturn ($results != false) ? new " + className + " ($results) : false;\n}";
 }
 
 /**
@@ -191,5 +181,16 @@ function generateFindById() {
  **/
 
 function generateGetList() {
-    return "public static function getList()\n{\n$db = DbConnect::getDb();\n$arr = [];\n" + '$q = $db->query("SELECT * FROM ' + tableName + '");\n' + "while ($donnees = $q->fetch(PDO::FETCH_ASSOC)) {\nif ($donnees != false) {\n$arr[] = new " + className + "($donnees);\n}\n}\nreturn $arr;\n}";
+    return "public static function getList()\n{\n$db = DbConnect::getDb();\n$arr = [];\n" + '$q = $db->query("SELECT * FROM ' + tableName + '");\n' + "while ($donnees = $q->fetch(PDO::FETCH_ASSOC)) if ($donnees != false) $arr[] = new " + className + "($donnees);\nreturn $arr;\n}";
+}
+
+// =================================================
+// ============ DBCONNECT
+
+/**
+ * Generate the dbConnect class
+ **/
+
+function generateDbConnect() {
+    return "<?php\nclass DbConnect\n{\nprivate static $db;\n\npublic static function getDb()\n{\nreturn DbConnect::$db;\n}\n\npublic static function init()\n{\n$host = '';\n$base = '';\n$user = '';\n$pass = '';\n\ntry {\nself::$db = new PDO('mysql:host=' . $host . '; dbname=' . $base . ';charset=utf8mb4', $user, $pass);\nself::$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);\n} catch (Exception $e) {\ndie();\n}\n}\n}";
 }

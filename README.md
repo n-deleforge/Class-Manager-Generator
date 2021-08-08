@@ -5,8 +5,8 @@
 
 ## How to use it ?
 
-- You can try the tool on my website : https://nicolas-deleforge.fr/apps/classManagerGenerator/  
-- You can download the lastest release : https://github.com/n-deleforge/class-manager-generator/releases 
+- You can try the tool on [my website](https://nicolas-deleforge.fr/apps/classManagerGenerator/)  
+- You can download the [lastest release](https://github.com/n-deleforge/class-manager-generator/releases)  
 - Or you can clone the git : ```git clone https://github.com/n-deleforge/class-manager-generator.git```
 
 # Note for self-host

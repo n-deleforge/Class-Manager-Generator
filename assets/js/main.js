@@ -3,6 +3,7 @@
 
 const _listInput = get(".gen");
 const _message = get("#error");
+const _copyright = "// File created with [ https://github.com/n-deleforge/class-manager-generator ]";
 let tableName; let tableID; let columnsName; let className; let dbType; let dbConnect;
 
 // =================================================
@@ -15,10 +16,14 @@ let tableName; let tableID; let columnsName; let className; let dbType; let dbCo
 get("#reset").addEventListener("click", () => {
     _message.style.visibility = "hidden";
 
-    // Each empty input increment the error variable
+    // Each select is reset
+    get("#dbType").selectedIndex = 0
+    get("#dbConnect").selectedIndex = 0
+
+    // Each input is reset
     for (let i = 0; i < _listInput.length; i++) {
         _listInput[i].value = ""; 
-    }
+    }    
 });
 
 /**
@@ -62,7 +67,7 @@ get("#generate").addEventListener("click", () => {
  **/
 
 function generateClass() {
-    return "<?php" + "\n" + 'class ' + className + "\n{\n" + generateAttributes() + "\n" + generateGetterSetter() + "\n" + genererConstruct() + "\n\n}";
+    return "<?php\n" + _copyright + "\n\nlass " + className + "\n{\n" + generateAttributes() + "\n" + generateGetterSetter() + "\n" + genererConstruct() + "\n\n}";
 }
 
 /**
@@ -117,7 +122,7 @@ function generateManager() {
     const key = columnsName.find(el => el == tableID);
     if (key != "undefined") columnsName.splice(columnsName.indexOf(key), 1)
 
-    return "<?php\nclass " + className + "Manager\n{\n" + generateAdd() + "\n\n" + generateUpdate() + "\n\n" + generateDelete() + "\n\n" + generateFindById() + "\n\n" + generateGetList() + "\n\n}";
+    return "<?php\n" + _copyright + "\n\nclass " + className + "Manager\n{\n" + generateAdd() + "\n\n" + generateUpdate() + "\n\n" + generateDelete() + "\n\n" + generateFindById() + "\n\n" + generateGetList() + "\n\n}";
 }
 
 /**
@@ -173,7 +178,11 @@ function generateDelete() {
  **/
 
 function generateFindById() {
-    return "public static function findById($id)\n{\n$db = DbConnect::getDb();\n$id = (int) $id;\n" + '$q = $db->query("SELECT * FROM ' + tableName + ' WHERE ' + tableID + '=$id");\n' + "$results = $q->fetch(PDO::FETCH_ASSOC);\nreturn ($results != false) ? new " + className + " ($results) : false;\n}";
+    // Difference between MariaDB and SQLite3
+    const fetch = (dbType == "mariadb") ? "fetch" : "fetcharray";
+    const fetchAssoc = (dbType == "mariadb") ? "FETCH_ASSOC" : "FETCH_OBJ";
+
+    return "public static function findById($id)\n{\n$db = DbConnect::getDb();\n$id = (int) $id;\n" + '$q = $db->query("SELECT * FROM ' + tableName + ' WHERE ' + tableID + '=$id");\n' + "$results = $q->" + fetch +"(PDO::" + fetchAssoc +");\nreturn ($results != false) ? new " + className + " ($results) : false;\n}";
 }
 
 /**
@@ -181,7 +190,11 @@ function generateFindById() {
  **/
 
 function generateGetList() {
-    return "public static function getList()\n{\n$db = DbConnect::getDb();\n$arr = [];\n" + '$q = $db->query("SELECT * FROM ' + tableName + '");\n' + "while ($donnees = $q->fetch(PDO::FETCH_ASSOC)) if ($donnees != false) $arr[] = new " + className + "($donnees);\nreturn $arr;\n}";
+    // Difference between MariaDB and SQLite3
+    const fetch = (dbType == "mariadb") ? "fetch" : "fetcharray"
+    const fetchAssoc = (dbType == "mariadb") ? "FETCH_ASSOC" : "FETCH_OBJ";
+
+    return "public static function getList()\n{\n$db = DbConnect::getDb();\n$arr = [];\n" + '$q = $db->query("SELECT * FROM ' + tableName + '");\n' + "while ($donnees = $q->" + fetch + "(PDO::"+ fetchAssoc + ")) if ($donnees != false) $arr[] = new " + className + "($donnees);\nreturn $arr;\n}";
 }
 
 // =================================================
@@ -192,5 +205,9 @@ function generateGetList() {
  **/
 
 function generateDbConnect() {
-    return "<?php\nclass DbConnect\n{\nprivate static $db;\n\npublic static function getDb()\n{\nreturn DbConnect::$db;\n}\n\npublic static function init()\n{\n$host = '';\n$base = '';\n$user = '';\n$pass = '';\n\ntry {\nself::$db = new PDO('mysql:host=' . $host . '; dbname=' . $base . ';charset=utf8mb4', $user, $pass);\nself::$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);\n} catch (Exception $e) {\ndie();\n}\n}\n}";
+    const reqStart = "<?php\n" + _copyright + "\n\nclass DbConnect\n{\nprivate static $db;\n\npublic static function getDb()\n{\nreturn DbConnect::$db;\n}\n\npublic static function init()\n{\n";
+    const reqMariaDb = "$host = '';\n$base = '';\n$user = '';\n$pass = '';\n\ntry {\nself::$db = new PDO('mysql:host=' . $host . '; dbname=' . $base . ';charset=utf8mb4', $user, $pass);\nself::$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);\n} catch (Exception $e) {\ndie();\n}\n}\n}";
+    const reqSQLite3 = "$path = '';\n\ntry {\nself::$db = new SQLite3($path);\n} catch (Exception $e) {\ndie();\n}\n}\n}";
+
+    return (dbType == "mariadb") ? reqStart + reqMariaDb : reqStart + reqSQLite3;
 }

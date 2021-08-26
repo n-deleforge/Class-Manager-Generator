@@ -3,7 +3,7 @@
 
 const _version = "1.6.1";
 const _github = "<a target=\"_blank\" href=\"https://github.com/n-deleforge/class-manager-generator\">GitHub</a>";
-const _home = "<a target=\"_blank\" href=\"https://nicolas-deleforge.fr/\">ForgeCode</a>";
+const _home = "<a target=\"_blank\" href=\"https://nicolas-deleforge.fr/\">ND</a>";
 
 const _french = {
     'reset' : "Effacer",
